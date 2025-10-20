@@ -1,0 +1,280 @@
+﻿@model ITAnket.Models.SurveyFormViewModel
+@using ITAnket.Data
+@{
+    ViewData["Title"] = "IT Memnuniyet Anketi";
+    var sorular = (IEnumerable<Question>)ViewBag.Sorular ?? Enumerable.Empty<Question>();
+}
+
+<div class="survey-bg py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-xl-10">
+                <div class="card survey-card shadow-lg border-0">
+
+                    <!-- ÜST BANNER (dikdörtgen logo/görsel) -->
+                    <div class="survey-banner">
+                        <img src="https://scontent.fsaw2-2.fna.fbcdn.net/v/t39.30808-6/453596368_991484476333505_5870452587899531312_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=RrPy16jGbPkQ7kNvwHCB0iv&_nc_oc=Adnf48yIdEOp_aQ_6YLyP-cv-lycQi4naXccMIeb-DTLJiG0VyrDhFU4NJiDHbqhhAWxDar1mIlB-4R0HqjVzXWI&_nc_zt=23&_nc_ht=scontent.fsaw2-2.fna&_nc_gid=NZTS1Q-nkRwRbJZIdFqhqw&oh=00_AfeXxpf-O7SfjAIFgBxUcpbPZh1qb6_fTVzxZiBTa4F1Gw&oe=68E6EE72"
+                             alt="IT Anket Banner" />
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+
+                        <!-- Başlık -->
+                        <div class="mb-4">
+                            <h2 class="h4 mb-1 fw-semibold">IT Memnuniyet Anketi</h2>
+                            <p class="text-secondary mb-0">Görüşleriniz bizim için önemli. Tamamlaması ~3 dk sürer.</p>
+                            <p class="text-secondary mb-0">Bu anket, çalışanlarımızın Bilgi İşlem Departmanı hizmetlerine ilişkin görüş ve memnuniyetlerini ölçmek amacıyla hazırlanmıştır.</p>
+                        </div>
+
+                        <form method="post" class="needs-validation" novalidate>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Kod" />
+
+                            <!-- Form üstü genel özet -->
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none" role="alert"></div>
+
+                            <!-- Katılımcı bilgileri -->
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="Isim" class="form-label required">İsim</label>
+                                    <input asp-for="Isim" class="form-control form-control-lg" required />
+                                    <span asp-validation-for="Isim" class="invalid-feedback d-block small"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="Soyisim" class="form-label required">Soyisim</label>
+                                    <input asp-for="Soyisim" class="form-control form-control-lg" required />
+                                    <span asp-validation-for="Soyisim" class="invalid-feedback d-block small"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="Mail" class="form-label required">E-Posta</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text">&#64;</span>
+                                        <input asp-for="Mail" class="form-control" required />
+                                    </div>
+                                    <span asp-validation-for="Mail" class="invalid-feedback d-block small"></span>
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+
+                            <!-- Sorular -->
+                            @foreach (var q in sorular.OrderBy(s => s.SiraNo))
+                            {
+                                <section class="mb-4 p-3 p-md-4 rounded-3 question-block" data-qid="@q.Id">
+                                    <div class="d-flex align-items-start justify-content-between mb-3">
+                                        <p class="fw-semibold mb-0 question-text">@q.Metin</p>
+                                        <span class="badge bg-light text-body-tertiary border">Soru @q.SiraNo</span>
+                                    </div>
+
+                                    <div class="row g-2 g-md-3">
+                                        @foreach (var op in q.Secenekler.OrderBy(x => x.SiraNo))
+                                        {
+                                            var inputId = $"opt_{q.Id}_{op.Id}";
+                                            <div class="col-12 col-sm-6 col-lg-4">
+                                                <input class="btn-check"
+                                                       type="radio"
+                                                       id="@inputId"
+                                                       name="Secimler[@q.Id]"
+                                                       value="@op.Id"
+                                                       @(Model?.Secimler != null && Model.Secimler.TryGetValue(q.Id, out var sec) && sec == op.Id ? "checked" : null) />
+                                                <label class="btn btn-outline-option w-100 text-start py-3 px-3" for="@inputId">
+                                                    <span class="option-dot me-2"></span>@op.Metin
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Her soru için uyarı alanı -->
+                                    <span id="err-q-@q.Id" class="text-danger small d-block mt-2"></span>
+                                </section>
+                            }
+
+                            <!-- Gönder -->
+                            <div class="d-grid d-sm-flex align-items-center justify-content-between gap-3 mt-4">
+                                <div class="text-secondary small">
+                                    Tüm alanlar <span class="text-danger">*</span> ile zorunludur.
+                                </div>
+                                <button type="submit" class="btn btn-success btn-lg px-4 fw-semibold shadow-sm">
+                                    Gönder
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+                <div class="text-center mt-3 text-secondary small">
+                    Cevaplarınız gizli tutulur.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Arka plan ve kart */
+        .survey-bg {
+            background: radial-gradient(1200px 600px at 10% -10%, rgba(25,135,84,.08), transparent), radial-gradient(1200px 600px at 110% 10%, rgba(13,110,253,.08), transparent);
+        }
+
+        .survey-card {
+            border-radius: 1rem;
+        }
+
+        /* Üst banner (dikdörtgen logo) */
+        .survey-banner img {
+            width: 100%;
+            height: 180px; /* mobil */
+            object-fit: cover;
+            display: block;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+
+        @@media (min-width: 768px) {
+            .survey-banner img {
+                height: 240px;
+            }
+            /* tablet+ */
+        }
+
+        /* Zorunlu işaretçisi */
+        .form-label.required::after {
+            content: " *";
+            color: var(--bs-danger);
+            font-weight: 600;
+        }
+
+        /* Soru blokları */
+        .question-block {
+            background: var(--bs-body-bg);
+            border: 1px solid var(--bs-border-color);
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+        }
+
+        /* Seçenek butonları (radio) */
+        .btn-outline-option {
+            border: 1px solid var(--bs-border-color);
+            background: var(--bs-body-bg);
+            transition: transform .05s ease-in-out, box-shadow .15s ease-in-out, border-color .15s;
+        }
+
+            .btn-outline-option:hover {
+                box-shadow: 0 .25rem .75rem rgba(0,0,0,.05);
+                border-color: var(--bs-primary);
+            }
+
+        .btn-check:checked + .btn-outline-option {
+            border-color: var(--bs-primary);
+            box-shadow: 0 .5rem 1rem rgba(13,110,253,.15);
+        }
+
+        .btn-check:focus + .btn-outline-option,
+        .btn-outline-option:focus {
+            outline: 0;
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 .25rem rgba(13,110,253,.25);
+        }
+
+        .option-dot {
+            display: inline-block;
+            width: .7rem;
+            height: .7rem;
+            border-radius: 50%;
+            border: 2px solid var(--bs-primary);
+        }
+
+        .btn-check:checked + .btn-outline-option .option-dot {
+            background: var(--bs-primary);
+        }
+
+        /* Validation mesajları görünür olsun */
+        .field-validation-error, .invalid-feedback {
+            margin-top: .25rem;
+            display: block;
+        }
+
+        /* Küçük ekran tekst boyutu */
+        @@media (max-width: 576px) {
+            .question-text {
+                font-size: 1rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Boş bırakılan her sorunun altına özel mesaj yaz, ilk hataya kaydır.
+        (function () {
+            'use strict';
+
+            const REQUIRED_MSG = 'Bu sorunun doldurulması zorunludur.';
+
+            // Radio seçilince kendi hata mesajını temizle
+            document.addEventListener('change', function (e) {
+                if (e.target.matches('input[type="radio"][name^="Secimler["]')) {
+                    const block = e.target.closest('.question-block');
+                    if (!block) return;
+                    const err = block.querySelector('[id^="err-q-"]');
+                    if (err) err.textContent = '';
+                }
+            });
+
+            // Form gönderim kontrolü
+            const form = document.querySelector('form.needs-validation');
+            if (!form) return;
+
+            form.addEventListener('submit', function (event) {
+                let hasError = false;
+
+                // İsim/Soyisim/Mail için HTML5 required çalışsın
+                if (!form.checkValidity()) {
+                    hasError = true;
+                }
+
+                // Her soru için seçim kontrolü
+                document.querySelectorAll('.question-block').forEach(block => {
+                    const qid = block.getAttribute('data-qid');
+                    const name = `Secimler[${qid}]`;
+                    const checked = block.querySelector(`input[type="radio"][name="${name}"]:checked`);
+                    const err = block.querySelector('[id^="err-q-"]');
+
+                    if (!checked) {
+                        hasError = true;
+                        if (err) err.textContent = REQUIRED_MSG;
+                    } else if (err) {
+                        err.textContent = '';
+                    }
+                });
+
+                if (hasError) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    // Validation summary'yi göster
+                    const summary = form.querySelector('[asp-validation-summary], .alert.alert-danger');
+                    if (summary) {
+                        summary.classList.remove('d-none');
+                        summary.textContent = 'Lütfen zorunlu alanları doldurun ve hataları düzeltin.';
+                    }
+
+                    // İlk hataya kaydır
+                    const firstQuestionErr = document.querySelector('.question-block [id^="err-q-"]:not(:empty)');
+                    const firstFieldErr = form.querySelector(':invalid');
+                    const target = firstQuestionErr || firstFieldErr;
+                    if (target && target.scrollIntoView) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+
+                form.classList.add('was-validated');
+            });
+        })();
+    </script>
+}

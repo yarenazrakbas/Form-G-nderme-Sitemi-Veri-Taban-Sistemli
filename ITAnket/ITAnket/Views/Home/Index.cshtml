@@ -1,0 +1,49 @@
+﻿@model ITAnket.Models.CreateLinkViewModel
+@{
+    ViewData["Title"] = "Anasayfa";
+}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Evrensel Anket Linki</h5>
+        <p class="text-muted">Bu link tüm çalışanlarla paylaşılabilir. Herkes aynı linkten anketi doldurur.</p>
+
+        @if (Model.MevcutKod != null)
+        {
+            <div class="alert alert-success d-flex align-items-center gap-2">
+                <div class="flex-grow-1">
+                    <label class="form-label mb-1">Mevcut link</label>
+                    <input id="anketLink" class="form-control" value="@Model.TamLink" readonly />
+                </div>
+                <div class="pt-4">
+                    <button type="button" id="btnCopy" class="btn btn-outline-secondary ms-2">Kopyala</button>
+                </div>
+            </div>
+        }
+
+        <form asp-action="LinkUret" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-primary">Anket Linkini Oluştur</button>
+            <span class="text-muted ms-2">(Yeni bir link üretir, eskisini pasif yapar)</span>
+        </form>
+
+        @if (Model.YeniUretildi)
+        {
+            <p class="mt-3 text-success">Link hazır! Paylaşmak için yukarıdaki adresi kopyalayın.</p>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnCopy')?.addEventListener('click', async () => {
+          const el = document.getElementById('anketLink');
+          if (!el) return;
+          try {
+            await navigator.clipboard.writeText(el.value);
+            const btn = document.getElementById('btnCopy');
+            btn.textContent = 'Kopyalandı ✓';
+            setTimeout(() => btn.textContent = 'Kopyala', 1500);
+          } catch { /* sessiz geç */ }
+        });
+    </script>
+}

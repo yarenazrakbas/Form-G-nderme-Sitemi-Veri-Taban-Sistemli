@@ -1,0 +1,27 @@
+﻿@* jQuery (layout'ta yoksa)*@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+@* jQuery Validate *@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+
+@* Türkçe yerelleştirme — validate.min.js'den SONRA gelmeli *@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/localization/messages_tr.min.js"></script>
+
+@* ASP.NET Core unobtrusive adapter *@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate-unobtrusive/3.2.13/jquery.validate.unobtrusive.min.js"></script>
+
+@* Gerekirse kesin override (tüm mesajları biz yazıyoruz) *@
+<script>
+    // Bu blok, TR dosyası yüklenmemişse bile İngilizceyi bastırır.
+    jQuery.extend(jQuery.validator.messages, {
+      required: "Bu alan zorunludur.",
+      email: "Geçerli bir e-posta adresi giriniz.",
+      number: "Lütfen geçerli bir sayı giriniz.",
+      digits: "Lütfen yalnızca rakam giriniz.",
+      equalTo: "Lütfen aynı değeri tekrar giriniz.",
+      maxlength: jQuery.validator.format("En fazla {0} karakter giriniz."),
+      minlength: jQuery.validator.format("En az {0} karakter giriniz."),
+      rangelength: jQuery.validator.format("{0} ile {1} karakter arasında giriniz."),
+      range: jQuery.validator.format("{0} ile {1} arasında bir değer giriniz.")
+    });
+</script>

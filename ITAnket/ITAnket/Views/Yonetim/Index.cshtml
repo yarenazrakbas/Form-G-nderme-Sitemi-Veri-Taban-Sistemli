@@ -1,0 +1,193 @@
+﻿@model ITAnket.Models.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Yönetim Paneli";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Yönetim Paneli</h4>
+    <div>
+       
+        <!-- Verileri Sil -->
+        <form asp-controller="Yonetim"
+              asp-action="Temizle"
+              method="post"
+              class="d-inline"
+              onsubmit="return confirm('TÜM anket verilerini silmek üzeresiniz. Bu işlem geri alınamaz. Devam edilsin mi?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger btn-sm me-2">Verileri Sil</button>
+        </form>
+
+        <!-- Çıkış -->
+        <a class="btn btn-outline-danger btn-sm" href="/Yonetim/Cikis">Çıkış</a>
+    </div>
+</div>
+
+@if (TempData["Mesaj"] is string msg)
+{
+    <div class="alert alert-warning py-2">@msg</div>
+}
+
+<!-- Özet kutuları -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card text-bg-light">
+            <div class="card-body">
+                <div class="fw-bold">Toplam Cevaplayan</div>
+                <div class="display-6">@Model.ToplamKatilimci</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-light">
+            <div class="card-body">
+                <div class="fw-bold">Son 7 Gün</div>
+                <div class="display-6">@Model.Son7GunKatilim</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Soru bazlı grafikler -->
+<h5 class="mb-2">Soru Bazlı Yüzde Dağılımları</h5>
+@for (int i = 0; i < Model.SoruIstatistikleri.Count; i++)
+{
+    var s = Model.SoruIstatistikleri[i];
+    var barId = $"chartBar{i}";
+    var pieId = $"chartPie{i}";
+    <div class="card mb-3">
+        <div class="card-body">
+            <strong class="d-block mb-2">@s.SoruMetni</strong>
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <canvas id="@barId" height="160"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="@pieId" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- GENEL GRAFİKLER -->
+<h5 class="mt-4">Genel Yüzdelik Dağılım (Tüm Yanıtlar)</h5>
+<div class="card mb-3">
+    <div class="card-body">
+        <canvas id="overallPie" height="180"></canvas>
+    </div>
+</div>
+
+
+
+<!-- Detaylı tablo -->
+<h5 class="mt-4">Detaylı Kayıtlar (ilk 1000)</h5>
+<div class="table-responsive">
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Tarih (UTC)</th>
+                <th>İsim</th>
+                <th>Soyisim</th>
+                <th>E-Posta</th>
+                <th>Soru</th>
+                <th>Seçenek</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in Model.DetayCevaplar)
+            {
+                <tr>
+                    <td>@d.Tarih</td>
+                    <td>@d.Isim</td>
+                    <td>@d.Soyisim</td>
+                    <td>@d.Mail</td>
+                    <td>@d.Soru</td>
+                    <td>@d.Secenek</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <!-- Chart.js (eğer Layout'ta yoksa bu CDN kalabilir) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Pie dilim üstüne yüzde yazan minik eklenti
+        const pieLabelPlugin = {
+          id: 'pieLabel',
+          afterDatasetsDraw(chart, args, opts) {
+            const { ctx } = chart;
+            chart.data.datasets.forEach((ds, dsIndex) => {
+              const meta = chart.getDatasetMeta(dsIndex);
+              meta.data.forEach((arc, i) => {
+                const val = ds.data[i];
+                if (!val || val <= 0) return;
+                const pos = arc.tooltipPosition();
+                ctx.save();
+                ctx.font = '12px sans-serif';
+                ctx.fillStyle = (opts && opts.color) ? opts.color : '#000';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(val + '%', pos.x, pos.y);
+                ctx.restore();
+              });
+            });
+          }
+        };
+        if (!Chart.registry.plugins.get('pieLabel')) {
+            Chart.register(pieLabelPlugin);
+        }
+
+        // Soru bazlı grafikler (Model’den gelen yüzdeler)
+        @for (int i = 0; i < Model.SoruIstatistikleri.Count; i++)
+        {
+                var s = Model.SoruIstatistikleri[i];
+                var barId = $"chartBar{i}";
+                var pieId = $"chartPie{i}";
+                @:(() => {
+                @:  const labels = [@Html.Raw(string.Join(",", s.Secenekler.Select(x => $"'{x.Metin.Replace("'", "\\'")}'")))];
+                @:  const values = [@Html.Raw(string.Join(",", s.Secenekler.Select(x => x.Yuzde.ToString(System.Globalization.CultureInfo.InvariantCulture))))];
+
+                @:  new Chart(document.getElementById('@barId'), {
+                @:    type: 'bar',
+                @:    data: { labels: labels, datasets: [{ label: 'Yüzde (%)', data: values, borderWidth: 1 }] },
+                @:    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+                @:  });
+
+                @:  new Chart(document.getElementById('@pieId'), {
+                @:    type: 'pie',
+                @:    data: { labels: labels, datasets: [{ data: values, borderWidth: 1 }] },
+                @:    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } }, pieLabel: { color: '#111' } } }
+                @:  });
+                @:})();
+        }
+
+        // === GENEL GRAFİKLER ===
+        // Controller: ViewBag.OverallLabels (string[]), OverallPerc (decimal[]), AvgLabels (string[]), AvgValues (decimal[])
+        const overallLabels = @Html.Raw(Json.Serialize(ViewBag.OverallLabels ?? Array.Empty<string>()));
+        const overallPerc   = @Html.Raw(Json.Serialize(ViewBag.OverallPerc ?? Array.Empty<decimal>()));
+        const avgLabels     = @Html.Raw(Json.Serialize(ViewBag.AvgLabels ?? Array.Empty<string>()));
+        const avgValues     = @Html.Raw(Json.Serialize(ViewBag.AvgValues ?? Array.Empty<decimal>()));
+
+        // GENEL PASTA
+        if (overallLabels.length > 0) {
+            new Chart(document.getElementById('overallPie'), {
+                type: 'pie',
+                data: { labels: overallLabels, datasets: [{ data: overallPerc, borderWidth: 1 }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Tüm Yanıtların Yüzdelik Dağılımı (%)' },
+                        pieLabel: { color: '#111' }
+                    }
+                }
+            });
+        }
+
+       
+    </script>
+}
